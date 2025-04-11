@@ -1,11 +1,9 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from 'chrome-aws-lambda';
 
 export default async function handler(req, res) {
   const { Body } = req.body;
-  console.log("🔍 Method:", req.method);
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+
   console.log("📩 Incoming message body:", Body);
 
   const urlMatch = Body.match(/https?:\/\/\S+/);
@@ -19,9 +17,12 @@ export default async function handler(req, res) {
   console.log("🔗 Extracted URL:", url);
 
   const browser = await puppeteer.launch({
-    headless: true,  // Ensure headless mode for faster execution
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],  // Necessary flags for cloud environments
+    executablePath: await chromium.executablePath,  // Pointing to the correct Chromium binary
+    headless: chromium.headless,  // Ensure headless mode
+    args: chromium.args,  // Special arguments for Vercel cloud environments
+    defaultViewport: chromium.defaultViewport,  // Set default viewport size
   });
+
   const page = await browser.newPage();
 
   // Disable images and other unnecessary resources
